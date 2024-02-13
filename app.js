@@ -10,7 +10,7 @@ var LocalStrategy = require('passport-local').Strategy;
 var multer = require('multer');
 var upload=(multer({dest:'./uploads'}));
 var flash = require('connect-flash');
-var bcrypt=require('bcryptjs');
+// var bcrypt=require('bcryptjs');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
 var db=mongoose.connection;
@@ -28,6 +28,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(bodyParser.urlencoded({ extended: true }))
 
 //Handle sessions
 app.use(session({

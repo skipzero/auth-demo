@@ -7,10 +7,11 @@ var passport =require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var nodeMailer=require('nodemailer');
 require('dotenv').config();
-const {check, validationResult} = require('express-validator/check');
+const {check, validationResult} = require('express-validator');
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.get('/', ensureAuthenticated, async function(req, res, next) {
+  const allUsers = await User.getAllUsers();
+  res.render('index', { users: allUsers})
 });
 
 router.get('/register', function(req, res, next) {
@@ -24,45 +25,66 @@ router.get('/login', function(req, res, next) {
 router.post('/login',
   passport.authenticate('local',{failureRedirect:'/users/login',failureFlash:'Invalid Credentials'}),
   function(req,res){
+    console.log('LOGIN::RES', res)
     req.flash('success','You are now logged in');
     res.redirect('/');
 });
 
-passport.serializeUser(function(user,done){
+router.delete('/delete/:id', async (req, res) => {
+  const { id } = req.params;
+  await User.findByIdAndDelete(id)
+    .then(user => user.remove())
+    .then (user => {
+      res.status(201).json({ message: 'User deleted', user})
+    })
+    .catch(err => {
+      res.status(400)
+        .json({ message: 'An error occurred', error: err.message })
+    })
+})
+
+passport.serializeUser(function(user, done){
   done(null,user.id);
 });
 
-passport.deserializeUser(function(id,done){
-  User.getUserById(id,function(err,user){
-    done(err,user);
+passport.deserializeUser(function(id, done){
+  User.getUserById(id,function(err, user){
+    done(err, user);
   });
 }); 
 
-passport.use(new LocalStrategy(function(username,password,done){
-  User.getUserByUsername(username,function(err,user){
-    if(err) throw err;
+passport.use(new LocalStrategy(function(username, password, done){
+  User.getUserByUsername(username, function(err, user){
+    if(err) {
+      console.log(`ERROR::ROUTE::getUserByUsername ${err}`)
+      throw err
+    };
     if(!user){
-      return done(null,false,{message:'unknown user'});
+      return done(null, false, {message:'unknown user'});
     }
 
-    User.comparePassword(password,user.password,function(err,isMatch){
-      if(err) return done(err);
+    User.comparePassword(password, user.password, function(err, isMatch){
+      if(err) {
+        console.log(`ERROR::ComparePassword ${err}`)
+        return done(err)
+      };
       if(isMatch){
+        console.log(`ISMATCH:: ${user}`)
         return done(null,user);
       }
-      else{
-        return done(null,false,{message:'Invalid Password'});
+      else {
+        return done(null, false, {message:'Invalid Password'});
       }
     });
   });
 }));
 
-router.post('/register',upload.single('profile'),[
+router.post('/register', upload.single('profile'),[
   check('name','Name is empty!! Required').not().isEmpty(),
   check('email', 'Email required').not().isEmpty(),
   check('contact','contact length should be 10').not().isEmpty().isLength({max:10})
-  ],function(req,res,next){
-    const {name, email, contact,username, password} = req.body;
+  ],function(req, res, next){
+    const {name, email, contact, username, password} = req.body;
     var form = {
       person:name,
       email:email,
@@ -71,11 +93,11 @@ router.post('/register',upload.single('profile'),[
       pass:password
     };
     console.log(form)
-    const errr = validationResult(req);
+    const err = validationResult(req);
 
-      if (!errr.isEmpty()) {
-        console.log(errr);
-        res.render('register',{errors:errr.errors,form:form});
+      if (!err.isEmpty()) {
+        console.error(err);
+        res.render('register',{errors:err.errors,form:form});
       } else {
         name,
         email,
@@ -84,12 +106,12 @@ router.post('/register',upload.single('profile'),[
         contact
         
         if(req.file) {
-          var profileimage=req.file.filename;
+          var profileimage = req.file.filename;
         } else {
-          var profileimage='noimage.jpg';
+          var profileimage = 'noimage.jpg';
         }
 
-        var newUser=new User({
+        var newUser = new User({
           name,
           email,
           password,
@@ -98,7 +120,7 @@ router.post('/register',upload.single('profile'),[
           contact
         });
 
-        User.createUser(newUser,function(){
+        User.createUser(newUser, function(){
           console.log('newUser', newUser);
         });
 
@@ -113,7 +135,7 @@ router.post('/register',upload.single('profile'),[
           }
       });
 
-      var mailOptions={
+      var mailOptions = {
           from:'Deepankur Lohiya<ankurlohiya3@gmail.com>',
           to:`${email}`,
           subject:'Confirmation Email',
@@ -121,9 +143,9 @@ router.post('/register',upload.single('profile'),[
           html:`<ul><li>Name:${name}</li><li>Mobile No.:${contact}</li><li>Profile:${profileimage}</li></ul>`
       }
 
-      transporter.sendMail(mailOptions,(err,info)=>{
+      transporter.sendMail(mailOptions, (err,info) => {
           if (err){
-              console.log(err);
+              console.error(err);
           } else {
               console.log(`Mail Sent at ${req.body.email}`);
           }
@@ -139,5 +161,12 @@ router.get('/logout',function(req,res){
   req.flash('success','You are now logged out');
   res.redirect('/users/login');
 });
+
+function ensureAuthenticated(rew, res, next) {
+  if (req.isAuthenticated()){
+    return next();
+  }
+  res.redirect('/users/login')
+}
 
 module.exports = router;

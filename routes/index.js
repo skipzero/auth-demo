@@ -2,10 +2,13 @@ var express = require('express');
 var perf = require('execution-time-async')();
 var router = express.Router();
 perf.config();
+var User = require('../models/user')
 
 /* GET home page . */
 router.get('/',ensureAuthenticated, function(req, res, next) {
-  res.render('index', { title: 'Members'});
+  User.find({}, (err, users) => {
+    res.render('index', {users:users, title: 'Members'})
+  })
 });
 function ensureAuthenticated(req,res,next){
   if(req.isAuthenticated()){
