@@ -4,3 +4,17 @@ title='Members'
 block content
   h1 Members Area
   p Welcome to the members area
+    table(style="width: 100%")
+      thead 
+        tr 
+          th Name 
+          th Username 
+          th Email 
+      tbody 
+      each user in users
+        tr
+          td  #{user.name}      
+          td  #{user.uname}      
+          td  #{user.email}          
+          td(style="padding:.5rem 0; margin: .5rem 0") 
+            button.btn.btn-primary(onclick=`handleClick('/users/delete/','DELETE', ${JSON.stringify({id:user.id})})`) Delete User

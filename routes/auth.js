@@ -5,14 +5,14 @@ router.get('/', ensureAuthentiticated, async (req, res) => {
 
 router.delete('/delete/:id', ensureAuthentiticated, async ( req, res) => {
   try {
-    const user = req.params.id
-    await findUserByIdAndDelete(user)
+    const {id}= req.params
+    await findUserByIdAndDelete(id)
 
     res.status(200).send('success');
   }
   catch (err) {
     console.error(err);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send(`Internal Server Error: ${err}`);
   }
 })
 

@@ -1,9 +1,11 @@
-var mongoose=require('mongoose');
-var bcrypt=require('bcryptjs');
+var mongoose = require('mongoose');
+var bcrypt = require('bcryptjs');
+
 mongoose.connect('mongodb://localhost/login_database')
-    .then(()=> console.log('Connection Established'))
-    .catch((err)=>console.log(`MONGOOSE:::ERROR::: ${err}`))
-var db=mongoose.connection;
+    .then(() => console.log('Connection Established'))
+    .catch((err) => console.error(`MONGOOSE:::ERROR::: ${err}`))
+
+var db = mongoose.connection;
 var userSchema=mongoose.Schema({
     name:{
         type:String,
@@ -16,7 +18,8 @@ var userSchema=mongoose.Schema({
         type:String
     },
     profileimage:{
-        type:String
+        type:String,
+        default: 'noimage.jpg',
     },
     uname:{
         type:String
@@ -25,11 +28,12 @@ var userSchema=mongoose.Schema({
         type:Number
     }
 });
-var User=module.exports=mongoose.model('user',userSchema);
 
-module.exports.getUserById = async function(id){
+var User = module.exports = mongoose.model('user',userSchema);
+
+module.exports.getUserById = async function(id, callback){
   try {
-    User.findById(id,callback);
+    User.findById(id, callback);
   }
 
   catch(err) {
@@ -37,18 +41,19 @@ module.exports.getUserById = async function(id){
   }
 };
 
-module.exports.getUserByUsername=function(username){
-  var query={uname:username}
+module.exports.getUserByUsername = function(username, callback){
+  var query = {uname:username}
   console.log('QUERY::', query)
-  return User.findOne(query)
+  return User.findOne(query, callback)
 };
-module.exports.comparePassword=function(candidatepassword,hash,callback){
-  bcrypt.compare(candidatepassword,hash,function(err,isMatch){
+
+module.exports.comparePassword = function(candidatepassword,hash,callback) {
+  bcrypt.compare(candidatepassword, hash, function(err, isMatch) {
     callback(null,isMatch);
   }); 
 };
 
-module.exports.createUser=function(newUser,callback){
+module.exports.createUser = function(newUser, callback){
   bcrypt.genSalt(10,function(err,salt){
     bcrypt.hash(newUser.password,salt,function(err,hash){
       newUser.password = hash

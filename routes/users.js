@@ -8,8 +8,9 @@ var LocalStrategy = require('passport-local').Strategy;
 var nodeMailer=require('nodemailer');
 require('dotenv').config();
 const {check, validationResult} = require('express-validator');
+
 /* GET users listing. */
-router.get('/', ensureAuthenticated, async function(req, res, next) {
+router.get('/', async function(req, res, next) {
   const allUsers = await User.getAllUsers();
   res.render('index', { users: allUsers})
 });
@@ -23,25 +24,17 @@ router.get('/login', function(req, res, next) {
 });
 
 router.post('/login',
-  passport.authenticate('local',{failureRedirect:'/users/login',failureFlash:'Invalid Credentials'}),
-  function(req,res){
-    console.log('LOGIN::RES', res)
+  passport.authenticate('local',
+    {
+      failureRedirect: '/users/login',
+      failureFlash: 'Invalid Credentials'
+    }
+  ),
+  function(req, res){
     req.flash('success','You are now logged in');
     res.redirect('/');
-});
-
-router.delete('/delete/:id', async (req, res) => {
-  const { id } = req.params;
-  await User.findByIdAndDelete(id)
-    .then(user => user.remove())
-    .then (user => {
-      res.status(201).json({ message: 'User deleted', user})
-    })
-    .catch(err => {
-      res.status(400)
-        .json({ message: 'An error occurred', error: err.message })
-    })
-})
+  }
+);
 
 passport.serializeUser(function(user, done){
   done(null,user.id);
@@ -56,7 +49,7 @@ passport.deserializeUser(function(id, done){
 passport.use(new LocalStrategy(function(username, password, done){
   User.getUserByUsername(username, function(err, user){
     if(err) {
-      console.log(`ERROR::ROUTE::getUserByUsername ${err}`)
+      console.error(`ERROR::ROUTE::getUserByUsername ${err}`)
       throw err
     };
     if(!user){
@@ -65,12 +58,11 @@ passport.use(new LocalStrategy(function(username, password, done){
 
     User.comparePassword(password, user.password, function(err, isMatch){
       if(err) {
-        console.log(`ERROR::ComparePassword ${err}`)
+        console.error(`ERROR::ComparePassword ${err}`)
         return done(err)
       };
       if(isMatch){
-        console.log(`ISMATCH:: ${user}`)
-        return done(null,user);
+        return done(null, user);
       }
       else {
         return done(null, false, {message:'Invalid Password'});
@@ -79,11 +71,13 @@ passport.use(new LocalStrategy(function(username, password, done){
   });
 }));
 
-router.post('/register', upload.single('profile'),[
-  check('name','Name is empty!! Required').not().isEmpty(),
-  check('email', 'Email required').not().isEmpty(),
-  check('contact','contact length should be 10').not().isEmpty().isLength({max:10})
-  ],function(req, res, next){
+router.post('/register', upload.single('profile'),
+  [
+    check('name','Name is empty!! Required').not().isEmpty(),
+    check('email', 'Email required').not().isEmpty(),
+    check('contact','contact length should be 10').not().isEmpty().isLength({max:10})
+  ],
+  function(req, res, next){
     const {name, email, contact, username, password} = req.body;
     var form = {
       person:name,
@@ -92,12 +86,11 @@ router.post('/register', upload.single('profile'),[
       uname:username,
       pass:password
     };
-    console.log(form)
-    const err = validationResult(req);
+    const errr = validationResult(req);
 
-      if (!err.isEmpty()) {
-        console.error(err);
-        res.render('register',{errors:err.errors,form:form});
+      if (!errr.isEmpty()) {
+        console.error(errr);
+        res.render('register',{errors: errr.errors, form: form});
       } else {
         name,
         email,
@@ -123,7 +116,18 @@ router.post('/register', upload.single('profile'),[
         User.createUser(newUser, function(){
           console.log('newUser', newUser);
         });
+      
 
+        /* Replaced with my info for testing purposes
+        /* var transporter = nodeMailer.createTransport({
+          service: "Gmail",
+          auth: {
+            user: "ebn646@gmail.com",
+            pass: "12345678",
+          },
+        });
+        */
+        // Personal gmail account info...
         var transporter = nodeMailer.createTransport({
           service:'Gmail',
           host: 'smtp.gmail.com',
@@ -133,7 +137,7 @@ router.post('/register', upload.single('profile'),[
               user:'bfalcon510@gmail.com',
               pass: process.env.GMAIL_PW
           }
-      });
+        });
 
       var mailOptions = {
           from:'Deepankur Lohiya<ankurlohiya3@gmail.com>',
@@ -156,14 +160,28 @@ router.post('/register', upload.single('profile'),[
     }
 });
 
+router.delete('/delete/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log(`ID: ${id}`);
+  await User.findByIdAndDelete(id)
+    .then(user => user.remove())
+    .then (user => {
+      res.status(201).json({ message: `User deleted: ${user}`})
+    })
+    .catch(err => {
+      res.status(400)
+        .json({ message: 'An error occurred', error: err.message })
+    })
+})
+
 router.get('/logout',function(req,res){
   req.logout();
   req.flash('success','You are now logged out');
   res.redirect('/users/login');
 });
 
-function ensureAuthenticated(rew, res, next) {
-  if (req.isAuthenticated()){
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
     return next();
   }
   res.redirect('/users/login')

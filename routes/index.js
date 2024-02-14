@@ -5,12 +5,13 @@ perf.config();
 var User = require('../models/user')
 
 /* GET home page . */
-router.get('/',ensureAuthenticated, function(req, res, next) {
-  User.find({}, (err, users) => {
+router.get('/', ensureAuthenticated, function(req, res, next) {
+  User.find({}, function(err, users) {
     res.render('index', {users:users, title: 'Members'})
   })
 });
-function ensureAuthenticated(req,res,next){
+
+function ensureAuthenticated(req, res, next){
   if(req.isAuthenticated()){
     return next();
   }
