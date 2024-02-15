@@ -17,4 +17,4 @@ block content
           td  #{user.uname}      
           td  #{user.email}          
           td(style="padding:.5rem 0; margin: .5rem 0") 
-            button.btn.btn-primary(onclick=`handleClick('/users/delete/','DELETE', ${JSON.stringify({id:user.id})})`) Delete User
+            button.btn.btn-primary(onclick=`handleClick('/users/delete/${user.id}','DELETE', ${JSON.stringify({id:user.id})})`) Delete User

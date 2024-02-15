@@ -36,6 +36,20 @@ router.post('/login',
   }
 );
 
+router.delete('/delete/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log(`ID: ${id}`);
+  await User.findByIdAndDelete(id)
+    .then(user => user.remove())
+    .then (user => {
+      res.status(201).json({ message: `User deleted: ${user}`})
+    })
+    .catch(err => {
+      res.status(400)
+        .json({ message: 'An error occurred', error: err.message })
+    })
+})
+
 passport.serializeUser(function(user, done){
   done(null,user.id);
 });
@@ -160,24 +174,11 @@ router.post('/register', upload.single('profile'),
     }
 });
 
-router.delete('/delete/:id', async (req, res) => {
-  const { id } = req.params;
-  console.log(`ID: ${id}`);
-  await User.findByIdAndDelete(id)
-    .then(user => user.remove())
-    .then (user => {
-      res.status(201).json({ message: `User deleted: ${user}`})
-    })
-    .catch(err => {
-      res.status(400)
-        .json({ message: 'An error occurred', error: err.message })
-    })
-})
-
 router.get('/logout',function(req,res){
-  req.logout();
-  req.flash('success','You are now logged out');
-  res.redirect('/users/login');
+  req.logout(() => {
+    req.flash('success','You are now logged out');
+    res.redirect('/users/login');
+  });
 });
 
 function ensureAuthenticated(req, res, next) {

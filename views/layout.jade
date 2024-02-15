@@ -9,21 +9,15 @@ html
     script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js')
     script.
       const handleClick = async(url, method, obj) => {
-        try{
+       
             const res = await fetch(url, {
               method: method,
               body: JSON.stringify(obj),
               headers: {'Content-Type': 'application/json'}
             })
-            if(res.status === 201)
-            console.log('DB Updated')
-            window.location.reload()
-        }catch(err){
-          console.error('ERROR: ', err)
-        }
+              .then(() => window.location.reload())
+              .catch(err => console.error(err))
       }
-
-
   body
     nav.navbar.navbar-default.navbar-inverse.top-bar  
       .container-fluid

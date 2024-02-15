@@ -2,19 +2,14 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var bodyParser = require('body-parser');
 var session = require('express-session');
 var passport = require('passport');
-var expressValidator=require('express-validator')
-var LocalStrategy = require('passport-local').Strategy;
-var multer = require('multer');
-var upload=(multer({dest:'./uploads'}));
-var flash = require('connect-flash');
-// var bcrypt=require('bcryptjs');
-var mongo = require('mongodb');
+
+// mongoose: our db connector
 var mongoose = require('mongoose');
 var db=mongoose.connection;
 
+// routes
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 

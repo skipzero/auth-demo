@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcryptjs');
 
+mongoose.set('strictQuery', false);
 mongoose.connect('mongodb://localhost/login_database')
     .then(() => console.log('Connection Established'))
     .catch((err) => console.error(`MONGOOSE:::ERROR::: ${err}`))
