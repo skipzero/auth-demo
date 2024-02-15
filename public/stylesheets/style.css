@@ -19,3 +19,8 @@ p {
 a {
   color: #00B7FF;
 }
+
+.wrapper {
+  margin: 0 auto;
+  width: 80rem;
+}
